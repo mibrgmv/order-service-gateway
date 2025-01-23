@@ -4,6 +4,21 @@
         <TargetFramework>net8.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <OutputType>Exe</OutputType>
     </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf"/>
+        <PackageReference Include="Grpc.Tools"/>
+        <PackageReference Include="Grpc.AspNetCore"/>
+        <PackageReference Include="Grpc.Net.Client"/>
+        <PackageReference Include="Microsoft.AspNetCore.Grpc.Swagger"/>
+        <PackageReference Include="Swashbuckle.AspNetCore.Annotations"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="appsettings.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Content>
+        <Protobuf Include="protos\*.proto" GrpcServices="Client" />
+    </ItemGroup>
 
 </Project>

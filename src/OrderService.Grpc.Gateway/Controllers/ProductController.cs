@@ -19,23 +19,6 @@ public class ProductController : ControllerBase
     }
 
     /// <summary>
-    /// Retrieve a specific product by its id
-    /// </summary>
-    /// <returns>An existing product</returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "Product retrieved", typeof(ProductDto))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Product not found")]
-    [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
-    [HttpGet("{productId:long}")]
-    public async Task<ActionResult<ProductDto>> GetProductAsync(
-        [FromRoute] long productId,
-        CancellationToken cancellationToken)
-    {
-        var request = new GetProductRequest { Id = productId };
-        GetProductResponse response = await _productService.GetProductAsync(request, cancellationToken: cancellationToken);
-        return Ok(response);
-    }
-
-    /// <summary>
     /// Add an array of products to the system
     /// </summary>
     [SwaggerResponse(StatusCodes.Status200OK, "Products added", typeof(long[]))]

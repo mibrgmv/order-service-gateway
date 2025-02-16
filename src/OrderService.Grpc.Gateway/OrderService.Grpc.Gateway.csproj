@@ -18,7 +18,7 @@
 
     <ItemGroup>
         <Content Include="appsettings.json"><CopyToOutputDirectory>Always</CopyToOutputDirectory></Content>
-        <Protobuf Include="protos\*.proto" GrpcServices="Client" />
+        <Protobuf Include="Protos\*.proto" GrpcServices="Client" />
     </ItemGroup>
 
 </Project>

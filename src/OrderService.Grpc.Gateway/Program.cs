@@ -2,12 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OrderService.Grpc.Gateway.ExceptionHandlers;
 using OrderService.Grpc.Gateway.Extensions;
-using OrderService.Grpc.Gateway.Options;
 using System.Reflection;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-
-builder.Services.AddOptions<GrpcClientOptions>().BindConfiguration(nameof(GrpcClientOptions));
 
 builder.Services.AddGrpcClients();
 builder.Services.AddControllers();

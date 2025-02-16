@@ -4,17 +4,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Orders.CreationService.Contracts;
 using Swashbuckle.AspNetCore.Annotations;
-using OrderServiceProto = Orders.CreationService.Contracts.OrderService;
 
 namespace OrderService.Grpc.Gateway.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class OrderController : ControllerBase
+public class OrderCreationController : ControllerBase
 {
-    private readonly OrderServiceProto.OrderServiceClient _orderService;
+    private readonly OrderCreationService.OrderCreationServiceClient _orderService;
 
-    public OrderController(OrderServiceProto.OrderServiceClient orderService)
+    public OrderCreationController(OrderCreationService.OrderCreationServiceClient orderService)
     {
         _orderService = orderService;
     }

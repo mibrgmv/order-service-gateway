@@ -15,7 +15,6 @@ builder.Services.AddSwaggerGen(o =>
     o.IncludeXmlComments(xmlPath);
 });
 builder.Services.AddGrpcSwagger();
-
 builder.Services.AddExceptionHandler<GrpcExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -26,4 +25,4 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseExceptionHandler();
 
-app.Run();
+await app.RunAsync();

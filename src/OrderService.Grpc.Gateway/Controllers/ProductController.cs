@@ -26,7 +26,7 @@ public class ProductController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpPut]
     public async Task<ActionResult> AddProductsAsync(
-        [FromBody] RepeatedField<AddProductDto> products,
+        [FromBody] RepeatedField<ProductDto> products,
         CancellationToken cancellationToken)
     {
         var request = new AddProductsRequest { Products = { products } };

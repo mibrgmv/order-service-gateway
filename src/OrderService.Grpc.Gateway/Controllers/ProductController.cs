@@ -1,9 +1,9 @@
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Products.CreationService.Contracts;
+using OrderService.Grpc.Gateway.Models.Products;
 using Swashbuckle.AspNetCore.Annotations;
+using Pb = Products.CreationService.Contracts;
 
 namespace OrderService.Grpc.Gateway.Controllers;
 
@@ -11,9 +11,9 @@ namespace OrderService.Grpc.Gateway.Controllers;
 [Route("api/[controller]")]
 public class ProductController : ControllerBase
 {
-    private readonly ProductService.ProductServiceClient _productService;
+    private readonly Pb.ProductService.ProductServiceClient _productService;
 
-    public ProductController(ProductService.ProductServiceClient productService)
+    public ProductController(Pb.ProductService.ProductServiceClient productService)
     {
         _productService = productService;
     }
@@ -26,11 +26,18 @@ public class ProductController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpPut]
     public async Task<ActionResult> AddProductsAsync(
-        [FromBody] RepeatedField<ProductDto> products,
+        [FromBody] IEnumerable<ProductDto> products,
         CancellationToken cancellationToken)
     {
-        var request = new AddProductsRequest { Products = { products } };
-        AddProductsResponse response = await _productService.AddProductsAsync(request, cancellationToken: cancellationToken);
+        IEnumerable<Pb.ProductDto> pbProducts = products
+            .Select(x => new Pb.ProductDto { Name = x.Name, Price = (double)x.Price });
+
+        var request = new Pb.AddProductsRequest { Products = { pbProducts } };
+
+        Pb.AddProductsResponse r = await _productService.AddProductsAsync(request, cancellationToken: cancellationToken);
+
+        var response = new AddProductsResponse(r.ProductsIds.ToArray());
+
         return Ok(response.ProductsIds);
     }
 
@@ -46,14 +53,24 @@ public class ProductController : ControllerBase
         [FromQuery] ProductQuery query,
         CancellationToken cancellationToken)
     {
-        AsyncServerStreamingCall<ProductDto> response = _productService.QueryProducts(query, cancellationToken: cancellationToken);
+        var q = new Pb.ProductQuery
+        {
+            Ids = { query.Ids },
+            NamePattern = query.NamePattern,
+            MinPrice = query.MinPrice,
+            MaxPrice = query.MaxPrice,
+            Cursor = query.Cursor,
+            PageSize = query.PageSize,
+        };
+
+        AsyncServerStreamingCall<Pb.ProductDto> response = _productService.QueryProducts(q, cancellationToken: cancellationToken);
 
         var products = new List<ProductDto>();
 
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
-            ProductDto product = response.ResponseStream.Current;
-            products.Add(product);
+            Pb.ProductDto product = response.ResponseStream.Current;
+            products.Add(new ProductDto(product.Name, (decimal)product.Price));
         }
 
         return Ok(products);

@@ -1,6 +1,5 @@
 using Google.Protobuf.Collections;
 using Grpc.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Orders.CreationService.Contracts;
 using Swashbuckle.AspNetCore.Annotations;

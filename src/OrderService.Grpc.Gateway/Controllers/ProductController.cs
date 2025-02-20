@@ -1,5 +1,4 @@
 using Grpc.Core;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OrderService.Grpc.Gateway.Models.Products;
 using Swashbuckle.AspNetCore.Annotations;

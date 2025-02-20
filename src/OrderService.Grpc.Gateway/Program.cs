@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
 using OrderService.Grpc.Gateway.ExceptionHandlers;
 using OrderService.Grpc.Gateway.Extensions;
 using System.Reflection;

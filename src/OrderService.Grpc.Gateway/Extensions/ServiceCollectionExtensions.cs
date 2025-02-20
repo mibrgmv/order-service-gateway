@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Orders.CreationService.Contracts;
 using Orders.ProcessingService.Contracts;

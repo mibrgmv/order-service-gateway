@@ -22,14 +22,14 @@ public static class ServiceCollectionExtensions
             .AddOptions<GrpcServerOptions>("product")
             .BindConfiguration("ProductService");
 
-        serviceCollection.AddGrpcClient<OrderCreationService.OrderServiceClient>((sp, op) =>
+        serviceCollection.AddGrpcClient<OrderCreationService.OrderServiceClient>("OrderCreationService", (sp, op) =>
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-creation");
             op.Address = new Uri(options.Address);
         });
 
-        serviceCollection.AddGrpcClient<OrderProcessingService.OrderServiceClient>((sp, op) =>
+        serviceCollection.AddGrpcClient<OrderProcessingService.OrderServiceClient>("OrderProcessingService", (sp, op) =>
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-processing");

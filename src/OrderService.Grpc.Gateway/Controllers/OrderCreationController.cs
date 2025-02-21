@@ -1,9 +1,9 @@
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
-using Orders.CreationService.Contracts;
+using OrderService.Grpc.Gateway.Models.OrderCreation;
 using Swashbuckle.AspNetCore.Annotations;
 using OrderCreationService = Orders.CreationService.Contracts.OrderService;
+using Pb = Orders.CreationService.Contracts;
 
 namespace OrderService.Grpc.Gateway.Controllers;
 
@@ -26,12 +26,16 @@ public class OrderCreationController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpPut]
     public async Task<ActionResult> AddOrdersAsync(
-        [FromBody] RepeatedField<AddOrderDto> orders,
+        [FromBody] IEnumerable<AddOrderModel> orders,
         CancellationToken cancellationToken)
     {
-        var request = new AddOrdersRequest { Orders = { orders } };
-        AddOrdersResponse response = await _orderService.AddOrdersAsync(request, cancellationToken: cancellationToken);
-        return Ok(response.OrdersIds);
+        IEnumerable<Pb.AddOrderDto> pbOrders = orders
+            .Select(x => new Pb.AddOrderDto { OrderCreatedBy = x.OrderCreatedBy });
+
+        var request = new Pb.AddOrdersRequest { Orders = { pbOrders } };
+        Pb.AddOrdersResponse response = await _orderService.AddOrdersAsync(request, cancellationToken: cancellationToken);
+
+        return Ok(response.OrdersIds.ToArray());
     }
 
     /// <summary>
@@ -45,11 +49,15 @@ public class OrderCreationController : ControllerBase
     [HttpPost("{orderId:long}/products")]
     public async Task<ActionResult> AddProductsToOrderAsync(
         [FromRoute] long orderId,
-        [FromBody] RepeatedField<AddProductToOrderDto> products,
+        [FromBody] IEnumerable<AddProductToOrderModel> products,
         CancellationToken cancellationToken)
     {
-        var request = new AddProductsToOrderRequest { OrderId = orderId, Products = { products } };
+        IEnumerable<Pb.AddProductToOrderDto> pbProducts = products.Select(x =>
+                new Pb.AddProductToOrderDto { ProductId = x.ProductId, Quantity = x.Quantity });
+
+        var request = new Pb.AddProductsToOrderRequest { OrderId = orderId, Products = { pbProducts } };
         await _orderService.AddProductsToOrderAsync(request, cancellationToken: cancellationToken);
+
         return Ok();
     }
 
@@ -64,10 +72,10 @@ public class OrderCreationController : ControllerBase
     [HttpDelete("{orderId:long}/products")]
     public async Task<ActionResult> RemoveProductsFromOrderAsync(
         [FromRoute] long orderId,
-        [FromBody] RepeatedField<long> productIds,
+        [FromBody] IEnumerable<long> productIds,
         CancellationToken cancellationToken)
     {
-        var request = new RemoveProductsFromOrderRequest { OrderId = orderId, ProductIds = { productIds } };
+        var request = new Pb.RemoveProductsFromOrderRequest { OrderId = orderId, ProductIds = { productIds } };
         await _orderService.RemoveProductsFromOrderAsync(request, cancellationToken: cancellationToken);
         return Ok();
     }
@@ -83,7 +91,7 @@ public class OrderCreationController : ControllerBase
         [FromRoute] long orderId,
         CancellationToken cancellationToken)
     {
-        var request = new StartOrderProcessingRequest { OrderId = orderId };
+        var request = new Pb.StartOrderProcessingRequest { OrderId = orderId };
         await _orderService.StartOrderProcessingAsync(request, cancellationToken: cancellationToken);
         return Ok();
     }
@@ -99,7 +107,7 @@ public class OrderCreationController : ControllerBase
         [FromRoute] long orderId,
         CancellationToken cancellationToken)
     {
-        var request = new CancelOrderRequest { OrderId = orderId };
+        var request = new Pb.CancelOrderRequest { OrderId = orderId };
         await _orderService.CancelOrderAsync(request, cancellationToken: cancellationToken);
         return Ok();
     }
@@ -108,22 +116,31 @@ public class OrderCreationController : ControllerBase
     /// Query orders with filters
     /// </summary>
     /// <returns>An array of orders matching the provided filter</returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "Orders queried", typeof(OrderDto[]))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Orders queried", typeof(Order[]))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Error while querying orders")]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpGet]
-    public async Task<ActionResult<OrderDto[]>> QueryOrdersAsync(
+    public async Task<ActionResult<Order[]>> QueryOrdersAsync(
         [FromQuery] OrderQuery query,
         CancellationToken cancellationToken)
     {
-        AsyncServerStreamingCall<OrderDto> response = _orderService.QueryOrders(query, cancellationToken: cancellationToken);
+        var q = new Pb.OrderQuery
+        {
+            Ids = { query.Ids },
+            OrderState = query.OrderState ?? Pb.OrderState.Unspecified,
+            CreatedBy = query.CreatedBy,
+            Cursor = query.Cursor,
+            PageSize = query.PageSize,
+        };
 
-        var orders = new List<OrderDto>();
+        AsyncServerStreamingCall<Pb.OrderDto> response = _orderService.QueryOrders(q, cancellationToken: cancellationToken);
+
+        var orders = new List<Order>();
 
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
-            OrderDto order = response.ResponseStream.Current;
-            orders.Add(order);
+            Pb.OrderDto o = response.ResponseStream.Current;
+            orders.Add(new Order(o.OrderState, o.OrderCreatedAt.ToDateTimeOffset(), o.OrderCreatedBy));
         }
 
         return Ok(orders);
@@ -133,22 +150,35 @@ public class OrderCreationController : ControllerBase
     /// Query order items with filters
     /// </summary>
     /// <returns>An array of order items matching the provided filter</returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "Order items queried", typeof(OrderItemDto[]))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Order items queried", typeof(OrderItem[]))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Error while querying order items")]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpGet("items")]
-    public async Task<ActionResult<OrderItemDto[]>> QueryOrderItemsAsync(
+    public async Task<ActionResult<OrderItem[]>> QueryOrderItemsAsync(
         [FromQuery] OrderItemQuery query,
         CancellationToken cancellationToken)
     {
-        AsyncServerStreamingCall<OrderItemDto> response = _orderService.QueryItems(query, cancellationToken: cancellationToken);
+        var q = new Pb.OrderItemQuery
+        {
+            Ids = { query.Ids },
+            OrderIds = { query.OrderIds ?? [] },
+            ProductIds = { query.ProductIds ?? [] },
+            Deleted = query.Deleted,
+            Cursor = query.Cursor,
+            PageSize = query.PageSize,
+        };
 
-        var items = new List<OrderItemDto>();
+        AsyncServerStreamingCall<Pb.OrderItemDto> response = _orderService.QueryItems(q, cancellationToken: cancellationToken);
+
+        var items = new List<OrderItem>();
 
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
-            OrderItemDto orderItem = response.ResponseStream.Current;
-            items.Add(orderItem);
+            Pb.OrderItemDto item = response.ResponseStream.Current;
+            items.Add(new OrderItem(
+                OrderId: item.OrderId,
+                ProductId: item.ProductId,
+                Quantity: item.OrderItemQuantity));
         }
 
         return Ok(items);
@@ -158,22 +188,39 @@ public class OrderCreationController : ControllerBase
     /// Query order history with filters
     /// </summary>
     /// <returns>An array of order history entries matching the provided filter</returns>
-    [SwaggerResponse(StatusCodes.Status200OK, "Order history queried", typeof(OrderHistoryItemDto[]))]
+    [SwaggerResponse(StatusCodes.Status200OK, "Order history queried", typeof(OrderHistoryItem[]))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Error while querying order history")]
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpGet("history")]
-    public async Task<ActionResult<OrderHistoryItemDto[]>> QueryOrderHistoryAsync(
-        [FromQuery] OrderHistoryQuery query,
+    public async Task<ActionResult<Pb.OrderHistoryItemDto[]>> QueryOrderHistoryAsync(
+        [FromQuery] long[] ids,
+        [FromQuery] long[]? orderIds,
+        [FromQuery] Pb.OrderHistoryItemKind? itemKind,
+        [FromQuery] int cursor,
+        [FromQuery] int pageSize,
         CancellationToken cancellationToken)
     {
-        AsyncServerStreamingCall<OrderHistoryItemDto> response = _orderService.QueryHistory(query, cancellationToken: cancellationToken);
+        var q = new Pb.OrderHistoryQuery
+        {
+            Ids = { ids },
+            OrderIds = { orderIds ?? [] },
+            Kind = itemKind ?? Pb.OrderHistoryItemKind.Unspecified,
+            Cursor = cursor,
+            PageSize = pageSize,
+        };
 
-        var historyItems = new List<OrderHistoryItemDto>();
+        AsyncServerStreamingCall<Pb.OrderHistoryItemDto> response = _orderService.QueryHistory(q, cancellationToken: cancellationToken);
+
+        var historyItems = new List<OrderHistoryItem>();
 
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
-            OrderHistoryItemDto item = response.ResponseStream.Current;
-            historyItems.Add(item);
+            Pb.OrderHistoryItemDto item = response.ResponseStream.Current;
+            historyItems.Add(new OrderHistoryItem(
+                OrderId: item.OrderId,
+                CreatedAt: item.OrderHistoryItemCreatedAt.ToDateTimeOffset(),
+                Kind: item.OrderHistoryItemKind,
+                Payload: item.Payload));
         }
 
         return Ok(historyItems);

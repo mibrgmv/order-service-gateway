@@ -32,12 +32,9 @@ public class ProductController : ControllerBase
             .Select(x => new Pb.ProductDto { Name = x.Name, Price = (double)x.Price });
 
         var request = new Pb.AddProductsRequest { Products = { pbProducts } };
+        Pb.AddProductsResponse response = await _productService.AddProductsAsync(request, cancellationToken: cancellationToken);
 
-        Pb.AddProductsResponse r = await _productService.AddProductsAsync(request, cancellationToken: cancellationToken);
-
-        var response = new AddProductsResponse(r.ProductsIds.ToArray());
-
-        return Ok(response.ProductsIds);
+        return Ok(response.ProductsIds.ToArray());
     }
 
     /// <summary>
@@ -68,8 +65,8 @@ public class ProductController : ControllerBase
 
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
-            Pb.ProductDto product = response.ResponseStream.Current;
-            products.Add(new ProductDto(product.Name, (decimal)product.Price));
+            Pb.ProductDto p = response.ResponseStream.Current;
+            products.Add(new ProductDto(p.Name, (decimal)p.Price));
         }
 
         return Ok(products);

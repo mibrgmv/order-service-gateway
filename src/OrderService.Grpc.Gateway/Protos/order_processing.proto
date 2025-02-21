@@ -6,7 +6,7 @@ option csharp_namespace = "Orders.ProcessingService.Contracts";
 
 import "google/protobuf/wrappers.proto";
 
-service OrderProcessingService {
+service OrderService {
   rpc ApproveOrder(ApproveOrderRequest) returns (ApproveOrderResponse);
   rpc StartOrderPacking(StartOrderPackingRequest) returns (StartOrderPackingResponse);
   rpc FinishOrderPacking(FinishOrderPackingRequest) returns (FinishOrderPackingResponse);

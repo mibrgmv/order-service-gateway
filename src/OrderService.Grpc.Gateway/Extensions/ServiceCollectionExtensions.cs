@@ -1,8 +1,8 @@
 using Microsoft.Extensions.Options;
-using Orders.CreationService.Contracts;
-using Orders.ProcessingService.Contracts;
 using OrderService.Grpc.Gateway.Options;
 using Products.CreationService.Contracts;
+using OrderCreationService = Orders.CreationService.Contracts.OrderService;
+using OrderProcessingService = Orders.ProcessingService.Contracts.OrderService;
 
 namespace OrderService.Grpc.Gateway.Extensions;
 
@@ -22,14 +22,14 @@ public static class ServiceCollectionExtensions
             .AddOptions<GrpcServerOptions>("product")
             .BindConfiguration("ProductService");
 
-        serviceCollection.AddGrpcClient<OrderCreationService.OrderCreationServiceClient>((sp, op) =>
+        serviceCollection.AddGrpcClient<OrderCreationService.OrderServiceClient>((sp, op) =>
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-creation");
             op.Address = new Uri(options.Address);
         });
 
-        serviceCollection.AddGrpcClient<OrderProcessingService.OrderProcessingServiceClient>((sp, op) =>
+        serviceCollection.AddGrpcClient<OrderProcessingService.OrderServiceClient>((sp, op) =>
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-processing");

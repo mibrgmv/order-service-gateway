@@ -7,7 +7,7 @@ option csharp_namespace = "Orders.CreationService.Contracts";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 
-service OrderCreationService {
+service OrderService {
   rpc AddOrders (AddOrdersRequest) returns (AddOrdersResponse);
   rpc AddProductsToOrder (AddProductsToOrderRequest) returns (AddProductToOrderResponse);
   rpc RemoveProductsFromOrder (RemoveProductsFromOrderRequest) returns (RemoveProductsFromOrderResponse);

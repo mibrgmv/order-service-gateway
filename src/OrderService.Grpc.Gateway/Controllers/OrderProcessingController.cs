@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Orders.ProcessingService.Contracts;
+using OrderProcessingService = Orders.ProcessingService.Contracts.OrderService;
 
 namespace OrderService.Grpc.Gateway.Controllers;
 
@@ -7,9 +8,9 @@ namespace OrderService.Grpc.Gateway.Controllers;
 [Route("api/[controller]")]
 public class OrderProcessingController : ControllerBase
 {
-    private readonly OrderProcessingService.OrderProcessingServiceClient _service;
+    private readonly OrderProcessingService.OrderServiceClient _service;
 
-    public OrderProcessingController(OrderProcessingService.OrderProcessingServiceClient service)
+    public OrderProcessingController(OrderProcessingService.OrderServiceClient service)
     {
         _service = service;
     }

@@ -127,7 +127,7 @@ public class OrderCreationController : ControllerBase
         var q = new Pb.OrderQuery
         {
             Ids = { query.Ids },
-            OrderState = query.OrderState ?? Pb.OrderState.Unspecified,
+            OrderState = query.OrderState == null ? Pb.OrderState.Unspecified : (Pb.OrderState)query.OrderState,
             CreatedBy = query.CreatedBy,
             Cursor = query.Cursor,
             PageSize = query.PageSize,
@@ -140,7 +140,7 @@ public class OrderCreationController : ControllerBase
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
             Pb.OrderDto o = response.ResponseStream.Current;
-            orders.Add(new Order(o.OrderState, o.OrderCreatedAt.ToDateTimeOffset(), o.OrderCreatedBy));
+            orders.Add(new Order((OrderState)o.OrderState, o.OrderCreatedAt.ToDateTimeOffset(), o.OrderCreatedBy));
         }
 
         return Ok(orders);

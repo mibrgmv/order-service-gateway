@@ -18,11 +18,14 @@ public static class ServiceCollectionExtensions
             .AddOptions<GrpcServerOptions>("order-processing")
             .BindConfiguration("OrderProcessingService");
 
-        serviceCollection
-            .AddOptions<GrpcServerOptions>("product")
-            .BindConfiguration("ProductService");
-
         serviceCollection.AddGrpcClient<OrderCreationService.OrderServiceClient>("OrderCreationService", (sp, op) =>
+        {
+            IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
+            GrpcServerOptions options = snapshot.Get("order-creation");
+            op.Address = new Uri(options.Address);
+        });
+
+        serviceCollection.AddGrpcClient<ProductService.ProductServiceClient>((sp, op) =>
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-creation");
@@ -33,13 +36,6 @@ public static class ServiceCollectionExtensions
         {
             IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
             GrpcServerOptions options = snapshot.Get("order-processing");
-            op.Address = new Uri(options.Address);
-        });
-
-        serviceCollection.AddGrpcClient<ProductService.ProductServiceClient>((sp, op) =>
-        {
-            IOptionsSnapshot<GrpcServerOptions> snapshot = sp.GetRequiredService<IOptionsSnapshot<GrpcServerOptions>>();
-            GrpcServerOptions options = snapshot.Get("product");
             op.Address = new Uri(options.Address);
         });
 

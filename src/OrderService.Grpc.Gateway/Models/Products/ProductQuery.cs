@@ -1,7 +1,7 @@
 namespace OrderService.Grpc.Gateway.Models.Products;
 
 public sealed record ProductQuery(
-    long[] Ids,
+    long[]? Ids,
     string? NamePattern,
     double? MinPrice,
     double? MaxPrice,

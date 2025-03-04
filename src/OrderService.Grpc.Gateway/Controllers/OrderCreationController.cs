@@ -1,5 +1,7 @@
 using Grpc.Core;
 using Microsoft.AspNetCore.Mvc;
+using OrderService.Grpc.Gateway.Extensions;
+using OrderService.Grpc.Gateway.Models;
 using OrderService.Grpc.Gateway.Models.OrderCreation;
 using Swashbuckle.AspNetCore.Annotations;
 using OrderCreationService = Orders.CreationService.Contracts.OrderService;
@@ -19,7 +21,7 @@ public class OrderCreationController : ControllerBase
     }
 
     /// <summary>
-    /// Add an array of orders to the system
+    /// Add an array of orders
     /// </summary>
     [SwaggerResponse(StatusCodes.Status200OK, "Orders added", typeof(long[]))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Error while adding orders")]
@@ -126,8 +128,8 @@ public class OrderCreationController : ControllerBase
     {
         var q = new Pb.OrderQuery
         {
-            Ids = { query.Ids },
-            OrderState = query.OrderState == null ? Pb.OrderState.Unspecified : (Pb.OrderState)query.OrderState,
+            Ids = { query.Ids ?? [] },
+            OrderState = query.OrderState.Serialize(),
             CreatedBy = query.CreatedBy,
             Cursor = query.Cursor,
             PageSize = query.PageSize,
@@ -140,7 +142,7 @@ public class OrderCreationController : ControllerBase
         while (await response.ResponseStream.MoveNext(cancellationToken))
         {
             Pb.OrderDto o = response.ResponseStream.Current;
-            orders.Add(new Order((OrderState)o.OrderState, o.OrderCreatedAt.ToDateTimeOffset(), o.OrderCreatedBy));
+            orders.Add(new Order(o.OrderState.Deserialize(), o.OrderCreatedAt.ToDateTimeOffset(), o.OrderCreatedBy));
         }
 
         return Ok(orders);
@@ -160,7 +162,7 @@ public class OrderCreationController : ControllerBase
     {
         var q = new Pb.OrderItemQuery
         {
-            Ids = { query.Ids },
+            Ids = { query.Ids ?? [] },
             OrderIds = { query.OrderIds ?? [] },
             ProductIds = { query.ProductIds ?? [] },
             Deleted = query.Deleted,
@@ -193,18 +195,18 @@ public class OrderCreationController : ControllerBase
     [SwaggerResponse(StatusCodes.Status500InternalServerError, "Internal server error")]
     [HttpGet("history")]
     public async Task<ActionResult<Pb.OrderHistoryItemDto[]>> QueryOrderHistoryAsync(
-        [FromQuery] long[] ids,
+        [FromQuery] long[]? ids,
         [FromQuery] long[]? orderIds,
-        [FromQuery] Pb.OrderHistoryItemKind? itemKind,
+        [FromQuery] OrderHistoryItemKind? itemKind,
         [FromQuery] int cursor,
         [FromQuery] int pageSize,
         CancellationToken cancellationToken)
     {
         var q = new Pb.OrderHistoryQuery
         {
-            Ids = { ids },
+            Ids = { ids ?? [] },
             OrderIds = { orderIds ?? [] },
-            Kind = itemKind ?? Pb.OrderHistoryItemKind.Unspecified,
+            Kind = itemKind.Serialize(),
             Cursor = cursor,
             PageSize = pageSize,
         };
@@ -219,7 +221,7 @@ public class OrderCreationController : ControllerBase
             historyItems.Add(new OrderHistoryItem(
                 OrderId: item.OrderId,
                 CreatedAt: item.OrderHistoryItemCreatedAt.ToDateTimeOffset(),
-                Kind: item.OrderHistoryItemKind,
+                Kind: item.OrderHistoryItemKind.Deserialize(),
                 Payload: item.Payload));
         }
 

@@ -7,9 +7,8 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+COPY ./*.props ./
 COPY ["src/OrderService.Grpc.Gateway/OrderService.Grpc.Gateway.csproj", "src/OrderService.Grpc.Gateway/"]
-COPY ["Directory.Build.props", "."]
-COPY ["Directory.Packages.props", "."]
 RUN dotnet restore "src/OrderService.Grpc.Gateway/OrderService.Grpc.Gateway.csproj"
 COPY . .
 WORKDIR "/src/src/OrderService.Grpc.Gateway"

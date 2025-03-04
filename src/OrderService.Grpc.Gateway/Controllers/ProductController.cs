@@ -51,7 +51,7 @@ public class ProductController : ControllerBase
     {
         var q = new Pb.ProductQuery
         {
-            Ids = { query.Ids },
+            Ids = { query.Ids ?? [] },
             NamePattern = query.NamePattern,
             MinPrice = query.MinPrice,
             MaxPrice = query.MaxPrice,

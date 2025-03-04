@@ -1,6 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Orders.ProcessingService.Contracts;
+using Swashbuckle.AspNetCore.Annotations;
+using ApproveOrderRequest = OrderService.Grpc.Gateway.Models.OrderProcessing.ApproveOrderRequest;
 using OrderProcessingService = Orders.ProcessingService.Contracts.OrderService;
+using Pb = Orders.ProcessingService.Contracts;
 
 namespace OrderService.Grpc.Gateway.Controllers;
 
@@ -15,19 +18,28 @@ public class OrderProcessingController : ControllerBase
         _service = service;
     }
 
+    /// <summary>
+    /// Approve an order
+    /// </summary>
+    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status400BadRequest)]
+    [SwaggerResponse(StatusCodes.Status404NotFound)]
+    [SwaggerResponse(StatusCodes.Status500InternalServerError)]
     [HttpPost("{orderId:long}/approve")]
     public async Task<ActionResult> ApproveOrder(
         [FromRoute] long orderId,
-        [FromQuery] bool isApproved,
-        [FromQuery] string approvedBy,
-        [FromQuery] string? failureReason = null)
+        [FromQuery] ApproveOrderRequest request,
+        CancellationToken cancellationToken)
     {
-        var request = new ApproveOrderRequest
+        var applicationRequest = new Pb.ApproveOrderRequest
         {
-            OrderId = orderId, IsApproved = isApproved, ApprovedBy = approvedBy, FailureReason = failureReason,
+            OrderId = orderId,
+            IsApproved = request.IsApproved,
+            ApprovedBy = request.ApprovedBy,
+            FailureReason = request.FailureReason,
         };
 
-        await _service.ApproveOrderAsync(request);
+        await _service.ApproveOrderAsync(applicationRequest, cancellationToken: cancellationToken);
         return Ok();
     }
 

@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen(o =>
 {
     string xmlPath = Path.Combine(AppContext.BaseDirectory, $"{Assembly.GetExecutingAssembly().GetName().Name}.xml");
     o.IncludeXmlComments(xmlPath);
+    o.CustomSchemaIds(type => type.ToString());
 });
 builder.Services.AddGrpcSwagger();
 builder.Services.AddExceptionHandler<GrpcExceptionHandler>();
